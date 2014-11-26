@@ -1,0 +1,417 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>CLUEDO</title>
+    <link href="http://getbootstrap.com/2.3.2/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="http://getbootstrap.com/2.3.2/assets/css/bootstrap-responsive.css" rel="stylesheet">
+
+</head>
+<body onload="OnLoadingEvent()">
+<!-- <script src="Logic.js"></script> -->
+<div class="row-fluid">
+    <div class="span12">
+        <h1 align="center">CLUEDO</h1>
+    </div>
+    <div class="row-fluid">
+        <!-- <h4 id="loginName" align="right"></h4> -->
+        <div id="choiceList"></div>
+    </div>
+    <form id="_playerNameForm">
+        <br>
+        <div id="playerNameDiv">
+            <div class="row-fluid">
+
+
+                <div class="span1" ><strong>Player Name: </strong></div>
+                <div class="span2"><input id="nameBox" type="text"
+                                          placeholder="Enter your Name" /></div>
+                <div class="span2"> <input type="button" class="btn btn-primary"
+                                           id="_player_playerNameButton" value="START" onclick="startGame()" />
+                </div>
+
+            </div>
+        </div>
+    </form>
+    <div id="game">
+        <form name="MainGame" id="MainGame" class="form-horizontal">
+            <div class="control-group">
+                <label class="control-label" for="inputEmail">Suspect Choice:</label>
+                <div class="controls">
+                    <select id="suspects"></select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="inputEmail">Room Choice:</label>
+                <div class="controls">
+                    <select id="rooms"></select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="inputEmail">WeaponChoice:</label>
+                <div class="controls">
+                    <select id="weapons"></select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <input id="guess" type="button" class="btn btn-primary" disabled="disabled" onclick="checkGuess()" value="GUESS"/>
+                </div>
+            </div>
+
+            <div class="controls">
+                <strong><div id="_finalDisplayString"></div></strong>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <div id="history"></div>
+                </div>
+            </div>
+
+            <div class="control-group">
+
+
+                <div class="controls">
+                    <div id="_winLossRecord"></div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <div id="record"></div>
+                </div>
+            </div>
+
+
+        </form>
+        <br/>
+        <div class="form-horizontal">
+            <div class="control-group">
+                <div class="control-label" for="inputEmail">
+
+                    <input id="_answerButton" class="btn btn-success"
+                           type="button" value="Show Winning Hand" onclick="test()" />
+                </div>
+                <div class="controls">
+                    <div id="showAnswer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- Row -->
+</body>
+<script type="text/javascript">
+
+/* src="Logic.js" */
+
+var __suspects = ["Mrs. Peacock", "Mrs. Green", "Miss Scarlet", 
+					"Colonel Mustard", "Professor Plum"];
+var __rooms = ["Kitchen", "Study", "Living Room", "Dining Room", "Library"];
+var __weapons = ["Pistol", "Knife", "Wrench", "Lead Pipe", "Candlestick"];
+
+
+var _playerName;
+var _hand = 3;
+var _playerHand;
+var _computerHand;
+var _winningHand;
+var _totalCards;
+var _cardShuffle;
+var _sizeOfHand;
+var _playerAnswer;
+var _choice;
+var _cpuChoice;
+var _cpuAnswer;
+var _history;
+var _winLossData;
+var _playAgain=false;
+
+function OnLoadingEvent() {
+	_playAgain=false;
+	document.getElementById("game").style.display = "none";
+	var sus = document.getElementById('suspects');
+	var rm = document.getElementById('rooms');
+	var wp = document.getElementById('weapons');
+	var _listOfSuspects = "<strong>Suspects: </strong> " + __suspects[0];
+	var _listOfRooms = "<strong>Rooms: </strong>" + __rooms[0];
+	var _listOfWeapons = "<strong>Weapons: </strong> " + __weapons[0]; 
+	for (var _iterator = 0; _iterator < __suspects.length; _iterator++) {
+		rm.options[rm.options.length] = new Option(__rooms[_iterator], __rooms[_iterator]);
+		wp.options[wp.options.length] = new Option(__weapons[_iterator], __weapons[_iterator]);
+		sus.options[sus.options.length] = new Option(__suspects[_iterator], __suspects[_iterator]);
+		
+		if (_iterator > 0) {
+			_listOfSuspects += (", " + __suspects[_iterator]); 	//Storing Data into JavaScript Variables
+			_listOfRooms += (", " + __rooms[_iterator]);
+			_listOfWeapons += (", " + __weapons[_iterator]);
+		}
+	}
+	document.getElementById('choiceList').innerHTML = (_listOfSuspects + "<br/>" +
+		_listOfRooms + "<br/>" + _listOfWeapons + "<br/>");
+}
+
+function startGame(name) {
+	/*document.getElementById("game").innerHTML= document.getElementById("nameBox").value*/
+	document.getElementById("game").style.display = "block";
+	_playerName = name;
+	_totalCards = __suspects.length;
+	_cardShuffle = _totalCards * _totalCards * 2;
+	_sizeOfHand = (Math.floor(_totalCards/2)*_hand);
+	_history = true;
+	_choice = __suspects.length;
+	if (localStorage.compWin == undefined || localStorage.compWin == "") {
+		localStorage.compWin = 0;
+	} 
+	if (localStorage.compLoss == undefined || localStorage.compLoss == "") {
+		localStorage.compLoss = 0;
+	} 
+	initialiseGame();
+}
+function initialiseGame() {
+	if(_playAgain)
+		location.reload();
+	_finalString('');
+	randomize();
+	showPlayerHand();
+	disableGuess(false); 	//Disabling the Button
+	sessionStorage.userHistory = "";
+	_showAnswer("");
+}
+
+
+function randomize() {
+	_playerHand = new Array(_sizeOfHand);
+	_computerHand = new Array(_sizeOfHand);
+	_winningHand = new Array(_hand);
+	var temp;
+	for (var i = 0; i < _cardShuffle; i++) {
+		swap(randomInt(0,_choice), randomInt(0,_choice), __suspects);
+		swap(randomInt(0,_choice), randomInt(0,_choice), __rooms);
+		swap(randomInt(0,_choice), randomInt(0,_choice), __weapons);
+	}
+	var eachType = _sizeOfHand / _hand;
+	_winningHand = [__suspects[0], __rooms[0], __weapons[0]];
+	for (var i = 0; i < eachType; i++) {
+		_playerHand[i] = __suspects[i * 2 + 1];
+		_playerHand[i + eachType] = __rooms[i * 2 + 1];
+		_playerHand[i + eachType * 2] = __weapons[i * 2 + 1];
+		_computerHand[i] = __suspects[i * 2 + 2];
+		_computerHand[i + eachType] = __rooms[i * 2 + 2];
+		_computerHand[i + eachType * 2] = __weapons[i * 2 + 2];
+	}
+	_cpuChoice = _playerHand.concat(_winningHand);
+}
+function randomInt(min, max) {
+	return Math.floor(Math.random() * (max - min)) + min;
+}
+function swap(i1, i2, array) {
+	var temp = array[i1];
+	array[i1] = array[i2];
+	array[i2] = temp;
+}
+function showPlayerHand() {
+	var message = "<br> Hello <strong>" + _playerName + "</strong>, you have the following cards: ";
+	message += _playerHand[0];
+	for (var i = 1; i < _playerHand.length; i++) {
+		message += (", " + _playerHand[i]);
+	}
+	document.getElementById("_playerNameForm").innerHTML =  message;
+}
+function checkGuess() {
+	var win = true;
+	var incorrect = new Array(0);
+	_playerAnswer = [document.getElementById('suspects').value,
+					document.getElementById('rooms').value,
+					document.getElementById('weapons').value];
+	sessionStorage.userHistory += (_playerName + " Guessed: " + 
+								_playerAnswer[0] + ", " +
+								_playerAnswer[1] + ", " +
+								_playerAnswer[2] + "|");
+	if (_history) showhistory();
+	for (var i = 0; i < _playerAnswer.length; i++) {
+		if (_playerAnswer[i] != _winningHand[i]) {
+			win = false;
+			incorrect.push(_playerAnswer[i]);
+		}
+ 	}
+ 	if (win) {
+ 		_finalString("" + _playerName + " Wins !" +
+ 			"<br/><input id='playAgain' type='button'" + 
+ 			"value='Play Again' onclick='initialiseGame()'/>");
+ 		_playAgain=true;
+ 		disableGuess(true);
+ 		if(localStorage.records==null)
+ 			localStorage.records = (_playerName + " beat COMPUTER " + " on " + 
+ 		 			dateGenerator() + "|");
+ 		else
+ 			localStorage.records += (_playerName + " beat COMPUTER " + " on " + 
+ 			dateGenerator() + "|");
+ 		localStorage.compLoss = parseInt(localStorage.compLoss) + 1;
+ 		document.getElementById('_recordButton').disabled = false;
+		if (_winLossData) displayRecord();	
+ 	} else {
+ 		_finalString("You got at least one answer [" + 
+ 			incorrect[randomInt(0,incorrect.length)] + "] incorrect." +
+ 			"<br/><input type='button' value='Computer Turn' onclick='cpuTurn()'/>");
+ 		disableGuess(true);
+ 	}
+}
+function cpuTurn() {
+	makeCpuGuess();
+	cpuWin = checkCpuGuess();
+	var msg = "The computer guessed: " + _cpuAnswer[0];
+	for(var i = 1; i < _cpuAnswer.length; i++) {
+		msg += ", " + _cpuAnswer[i];
+	}
+	msg += ", which is ";
+	if (cpuWin) {
+		if(localStorage.records==null)
+			localStorage.records=("Computer beat " + _playerName + " on " + 
+					dateGenerator() + "|");
+		else
+			localStorage.records += ("Computer beat " + _playerName + " on " + 
+			dateGenerator() + "|");
+		_playAgain=true;
+		if (_history) showhistory();
+		msg += "correct.  CPU WINS!!!" + 
+			"<br/><input type='button' value='Play Again' onclick='initialiseGame()'/>";
+		localStorage.compWin = parseInt(localStorage.compWin) + 1;
+		if (_winLossData) displayRecord();
+
+	} else {
+		msg += "incorrect." + 
+			"<br/><input type='button' value='Next Turn' onclick='nextGuess()'/>";
+	}
+	_finalString(msg);
+}
+function makeCpuGuess() {
+	var choiceArray = [__suspects, __rooms, __weapons];
+	_cpuAnswer = new Array(_hand);
+	for(var i = 0; i < _hand; i++){
+		var flag = false;
+		while(!flag){
+			_cpuAnswer[i] = choiceArray[i][randomInt(0,5)];
+			flag = searchInArrayData(_cpuAnswer[i], _cpuChoice);	
+		}
+	}
+	
+	sessionStorage.userHistory += ("Computer Guessed: " + 
+								_cpuAnswer[0] + ", " +
+								_cpuAnswer[1] + ", " +
+								_cpuAnswer[2] + "|");	
+	if(_history) showhistory();	
+}
+function checkCpuGuess() {
+	for(var i = 0; i < _hand; i ++) {
+		if (_cpuAnswer[i] != _winningHand[i]) {
+			_cpuChoice.splice(_cpuChoice.indexOf(_cpuAnswer[i]),1);
+			return false;
+		}
+	}
+	return true;
+}
+function nextGuess() {
+	_finalString("");
+	disableGuess(false);
+}
+function disableGuess(param) {
+	if(param){
+		document.getElementById('guess').disabled = true;
+	}else{
+		document.getElementById('guess').disabled = false;
+	}
+}
+
+function searchInArrayData(item, array) {
+	for(var i = 0; i < array.length; i++) {
+		if (item == array[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+function toggleHistory() {
+	var temp = document.getElementById('_historyButton');
+	if(temp.value == 'Display History') {
+		temp.value = 'Hide History';
+		_history = true;
+		showhistory();
+	} else {
+		temp.value = 'Display History';
+		_history = false;
+		document.getElementById('history').innerHTML = "";
+	}
+}
+function showhistory() {
+	var _userHistory = sessionStorage.userHistory.split("|");
+	var msg = "";
+	for (var i = 1; i <_userHistory.length; i++) {
+		msg += (_userHistory[i-1] + '\n');
+	}
+	Android.overwriteHistory(msg);
+	//document.getElementById('history').innerHTML = msg;
+}
+function toggleRecord() {
+	var temp = document.getElementById('_recordButton');
+	if(temp.value == 'Display Stats') {
+		temp.value = 'Hide Stats';
+		_winLossData = true;
+		displayRecord();
+	} else {
+		temp.value = 'Display Stats';
+		_winLossData = false;
+		document.getElementById('record').innerHTML = "";
+	}
+}
+function displayRecord() {
+	var temp = localStorage.records.split("|");
+	var msg = "";
+	for (var i = temp.length; i > 1; i--) {
+		msg += (temp[i-2] + "<br/>");
+	}
+	document.getElementById('_winLossRecord').innerHTML = ("COMPUTER Vs "+ _playerName + ": " + 
+		localStorage.compWin + " - " + localStorage.compLoss);
+	document.getElementById('record').innerHTML = msg;
+}
+function test() {
+	var m = "";
+	for (var i = 0; i < (_winningHand.length-1); i++){
+		m += _winningHand[i] + ", ";
+	}
+	m+=_winningHand[i];
+	
+	_showAnswer(m);
+}
+function dateGenerator() {
+	var date = new Date();
+	var month = date.getMonth();
+	var day = date.getDate();
+	var year = date.getFullYear();
+	var hour = date.getHours();
+	var min = date.getMinutes();
+	min = min < 10 ? '0' + min : min;
+	return (month + '/' + day + '/' + year + ' ==> ' + hour + ':' + min +'');
+}
+function clearHistory() {
+	localStorage.records = ""
+	localStorage.compLoss = "";
+	localStorage.compWin = "";
+}
+function _finalString(msg) {
+	document.getElementById("_finalDisplayString").innerHTML = msg;
+}
+
+function _showAnswer(msg) {
+	document.getElementById("showAnswer").innerHTML = msg;
+}
+</script>
+</html>

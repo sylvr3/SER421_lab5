@@ -1,0 +1,23 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    tools:context="edu.asu.brantsylvia.task1.GameActivity"
+    android:gravity="fill_horizontal|fill_vertical"
+    android:orientation="vertical">
+
+    <WebView
+        android:id="@+id/webView"
+        android:layout_alignParentTop="true"
+        android:layout_width="wrap_content"
+        android:layout_height="400dp" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@id/webView"
+        android:id="@+id/historyText"
+        android:layout_centerHorizontal="true"
+        android:text="" />
+
+</LinearLayout>
